@@ -26,7 +26,8 @@ app.use('*', async (c, next) => {
 
 app.onError((e, c) => {
   console.error(e);
-  return c.json({ error: 'internal_error' }, 500);
+  const detail = e instanceof Error ? e.message : JSON.stringify(e);
+  return c.json({ error: 'internal_error', detail }, 500);
 });
 
 /** MVP: 未登録の device_id は固定 user_id で自動作成する */

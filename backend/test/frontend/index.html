@@ -58,7 +58,7 @@ async function upload(){
   fd.append('crop',JSON.stringify({x:cx,y:cy,w:cw,h:ch}));
   await fetchJ('POST',`/devices/${$('dev').value}/images`,null,fd);list()}
 async function list(){
-  const j=await api('GET','/images?status=all');if(!j)return;
+  const j=await api('GET','/images?status=all');if(!j||!j.images)return;
   $('imgs').innerHTML=j.images.map((i,n)=>`<div class="im"><img src="${i.display_url}">
    ${i.status} / ${i.sort_order}<br>${i.image_id.slice(0,8)}<br>
    ${i.status==='queued'?`<button onclick="mv('${i.image_id}',null)">先頭へ</button>
