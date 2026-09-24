@@ -26,5 +26,5 @@ npm test
 
 ```bash
 npm run dev                          # http://localhost:8787
-python3 -m http.server 8000 -d test/frontend   # http://localhost:8000
+python3 -m http.server 8000 -d test/frontend   # http://localhost:8000 (接続先はページ上部で リモート/ローカル を切替)
 ```
