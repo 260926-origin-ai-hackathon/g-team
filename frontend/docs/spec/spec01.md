@@ -1,3 +1,11 @@
+> 2026-09-25 接続仕様の確定による改訂：以下の項目は本文の旧記述に優先する。
+> - Push通知・購読登録・VAPIDは不要。通知はアプリ内のみ。
+> - 状態・設定は GET /devices/{id}/status。警告は warned_at != null で判定し、warning_reason で文言を分ける。
+> - いいねは images[].like_count / last_liked_at。
+> - 切り直しAPIは実装しない。未表示写真を削除し、切り取って再投稿する。
+> - 通常 test_mode=false（親機600秒）、デモ直前のみtrue（親機5秒）。子側状態取得とは別の周期。
+> 詳細と検証状況は [接続メモ](../integration.md) を参照。
+
 # フロントエンド設計書 (React / PWA)
 
 ## 1. 前提

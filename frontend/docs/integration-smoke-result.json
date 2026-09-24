@@ -1,0 +1,28 @@
+{
+  "device_id": "smoke-20260924T165531Z",
+  "checks": [
+    "shared status read",
+    "shared images read",
+    "multipart upload",
+    "queue reorder",
+    "queued image delete",
+    "advance persists current image",
+    "displayed image deletion rejected",
+    "parent display payload",
+    "like round trip",
+    "signed image JPEG 320x240",
+    "demo warning round trip",
+    "manual warning clear",
+    "empty detection body and first detection clear",
+    "test device normal mode restored"
+  ],
+  "created_image_ids": [
+    "61d5b575-aeb1-4749-9816-b7e730614217",
+    "5c60ba29-2b41-4e9c-8325-c75285de61ee"
+  ],
+  "shared_device_modified": false,
+  "result": "PASS",
+  "remaining_displayed_ids": [
+    "5c60ba29-2b41-4e9c-8325-c75285de61ee"
+  ]
+}
