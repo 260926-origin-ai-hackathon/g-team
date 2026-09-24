@@ -254,8 +254,9 @@ app.post('/users/:userId/push-subscriptions', async (c) => {
 app.post('/devices/:deviceId/detections', async (c) => {
   const db = c.var.db;
   const dev = await getDevice(c, c.req.param('deviceId'));
-  const body = await c.req.json().catch(() => null);
-  const at = new Date(body?.detected_at);
+  const body = await c.req.json().catch(() => ({}));
+  // ハードは {} を送るため、未指定ならサーバー受信時刻を使う
+  const at = body?.detected_at ? new Date(body.detected_at) : new Date();
   if (Number.isNaN(at.getTime())) return c.json({ error: 'invalid detected_at' }, 400);
 
   const first = !dev.last_detected_at || new Date(dev.last_detected_at).getTime() + resetMs(dev) <= at.getTime();
