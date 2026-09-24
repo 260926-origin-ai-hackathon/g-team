@@ -41,7 +41,9 @@ let cur='';
 const $=id=>document.getElementById(id);
 const log=(t,o)=>{$('log').textContent=`${t}\n${typeof o==='string'?o:JSON.stringify(o,null,1)}\n\n`+$('log').textContent};
 async function fetchJ(m,path,body,raw){
-  const r=await fetch($('base').value+path,{method:m,headers:body&&!raw?{'content-type':'application/json'}:{},body:raw||(body?JSON.stringify(body):undefined)});
+  let r;
+  try{r=await fetch($('base').value+path,{method:m,headers:body&&!raw?{'content-type':'application/json'}:{},body:raw||(body?JSON.stringify(body):undefined)})}
+  catch(e){log(`${m} ${path} → 通信失敗`,String(e)+'\nサーバーのログ(npm run devのターミナル)を確認。SUPABASE_URL/KEY・テーブル作成・再起動を確認');return null}
   const j=await r.json().catch(()=>null);log(`${m} ${path} → ${r.status}`,j);return j}
 const api=(m,p,b)=>fetchJ(m,`/devices/${$('dev').value}${p}`,b);
 function toBlob(img,sx,sy,sw,sh,w,h){const c=document.createElement('canvas');c.width=w;c.height=h;
