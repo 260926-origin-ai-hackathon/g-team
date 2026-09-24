@@ -1,0 +1,87 @@
+/* Palette and type scale, independent of layout and motion. */
+:root {
+  --ink: #292b29;
+  --muted: #666963;
+  --canvas: #faf9f6;
+  --surface: #ffffff;
+  --soft: #f1f0eb;
+  --border: #e5e4de;
+  --green: #285c48;
+  --type-small: .875rem;
+  --type-body: 1rem;
+  --type-section: 1.25rem;
+  --type-title: 1.75rem;
+  --type-value: 2rem;
+  color: var(--ink);
+  background: var(--canvas);
+  font-size: 16px;
+}
+.desktop-sidebar, .topbar, .dialog, .current-card, .queue-item, .settings-card {
+  background: var(--surface);
+  color: var(--ink);
+}
+.brand-symbol, .brand-symbol svg + svg, .round-icon, .count,
+.secondary, .queue-empty, .send-card, .empty-state, .upload-drop,
+.demo-banner, .full-photo, .hero-photo, .queue-image, .history-photo img {
+  background: var(--soft);
+  color: var(--ink);
+}
+.send-card, .empty-state, .upload-drop, .demo-banner, .demo-banner select {
+  border-color: var(--border);
+}
+.brand-dot, .sidebar-note, .send-icon { color: var(--muted); }
+.desktop-sidebar nav button.selected { background: var(--soft); color: var(--ink); }
+.mobile-nav { background: #fffffff2; }
+.mobile-nav button, .desktop-sidebar nav button { color: var(--muted); }
+.mobile-nav button.selected { color: var(--ink); }
+.mobile-nav .nav-add { color: var(--green); }
+.time-row input { background: var(--canvas); color: var(--ink); border-color: #babcb5; }
+.toast { background: var(--ink); }
+.icon-button:hover, .mini-button:hover { background: var(--soft); }
+.status-card.normal { background: #f2f7f2; color: #28533e; border-color: #dce8dc; }
+.status-card.normal .status-orbit { background: #e2eee2; }
+.status-card.unknown { background: var(--soft); color: #565b55; border-color: var(--border); }
+.status-card.unknown .status-orbit { background: #e5e6df; }
+.status-footer { border-color: currentColor; border-top-color: #292b2920; }
+.like-badge { background: #faf0ec; color: #934c46; }
+
+/* Five roles, shared across mobile and desktop. */
+h1, .page-heading h1 { font-size: var(--type-title); font-weight: 700; }
+h2, .section-heading h2, .history-section h2, .setting-title h2,
+.dialog-heading h2, .send-card h2 { font-size: var(--type-section); font-weight: 700; }
+h3, .photo-caption h3, .notification-card h3 { font-size: var(--type-body); font-weight: 500; }
+.primary, .secondary, .danger, .text-button { font-size: var(--type-body); font-weight: 500; }
+.status-main strong { font-size: var(--type-value); font-weight: 700; }
+.status-label, .status-caption, .status-footer, .status-explanation,
+.small, .fine-print, .section-help, .eyebrow, .photo-caption .eyebrow,
+.today, .count, .subtle-label, .like-badge, .history-photo > span,
+.page-heading p, .notification-card p, .send-card p, .send-card .eyebrow,
+.footer-note, .tagline, .sidebar-note p, .sidebar-bottom, .desktop-greeting,
+.test-toggle, .demo-banner, .demo-banner select, .test-banner,
+.upload-drop span, .crop-preview, .mobile-nav button {
+  font-size: var(--type-small);
+  line-height: 1.65;
+}
+.dialog > p, .setting-title p, .empty-state p, .queue-empty, .zoom-control {
+  font-size: var(--type-body);
+}
+.status-caption { opacity: 1; }
+.page-heading p, .footer-note, .history-photo > span { color: var(--muted); }
+.send-card .eyebrow { color: var(--muted); }
+.send-card h2 { font-weight: 500; }
+.photo-caption .eyebrow { font-weight: 400; }
+.demo-banner { color: #5c6058; }
+.demo-banner select { color: var(--ink); background: white; }
+@media (hover: hover) {
+  .desktop-sidebar nav button:hover, .upload-drop:hover { background: #eae9e3; }
+}
+@media (max-width: 760px) {
+  .page-heading { flex-wrap: wrap; }
+  .today { position: static; order: -1; width: 100%; }
+  .page-heading .eyebrow { display: none; }
+  .page-heading p { max-width: none; }
+  .section-heading { align-items: baseline; flex-wrap: wrap; gap: 6px 12px; }
+  .status-footer { gap: 8px 16px; }
+  .demo-banner select { max-width: 110px; }
+  .dialog-heading h2 { line-height: 1.5; }
+}

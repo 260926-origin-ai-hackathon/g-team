@@ -8,10 +8,12 @@ export function relativeTime(value: string | null, now = Date.now()): string {
 export function getActivity(s: Status | null, lastMotion: string | null, now = Date.now()) {
   const motion = s?.last_detected_at ?? lastMotion;
   const known = motion !== null && Number.isFinite(Date.parse(motion)) && Date.parse(motion) <= now;
-  const offline = !!s?.last_seen_at && now - Date.parse(s.last_seen_at) >= 30 * 60000;
-  const silent = known && s !== null && now - Date.parse(motion) >= (s.test_mode ? 1000 : s.reset_hours * 3600000);
-  if (offline) return { tone: 'warning', title: '機器の通信を確認してください', detail: silent ? '長時間、動きも確認できていません。' : '現在の動きの有無は確認できません。' };
-  if (silent) return { tone: 'alert', title: 'しばらく反応がありません', detail: 'ご家族に連絡して、様子を確認してください。' };
+  const offline = s?.is_offline === true;
+  const warned = s?.warned_at != null;
+  if (warned && s.warning_reason === 'demo') return { tone: 'alert', title: 'デモの警告を表示しています', detail: '動作確認用の警告です。実際の異常を示すものではありません。' };
+  if (warned && s.warning_reason === 'no_detection') return { tone: 'alert', title: 'しばらく反応がありません', detail: offline ? '機器の通信も途絶えています。ご家族に連絡して、様子を確認してください。' : 'ご家族に連絡して、様子を確認してください。' };
+  if (offline || (warned && s.warning_reason === 'device_offline')) return { tone: 'warning', title: '機器の通信を確認してください', detail: '現在の動きの有無は確認できません。機器の電源や通信をご確認ください。' };
+  if (warned) return { tone: 'alert', title: '確認が必要なお知らせがあります', detail: 'ご家族と機器の様子を確認してください。' };
   if (!known) return { tone: 'unknown', title: '生活の反応を待っています', detail: '最初の検知が届くと、ここにお知らせします。' };
   if (s === null || !s.last_seen_at || !Number.isFinite(Date.parse(s.last_seen_at)) || Date.parse(s.last_seen_at) > now) return { tone: 'unknown', title: '最後の反応を記録しています', detail: '機器の通信状態はまだ取得できていません。' };
   return { tone: 'normal', title: '生活の反応が届いています', detail: 'センサーで動きを検知した記録です。' };
