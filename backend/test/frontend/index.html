@@ -8,7 +8,10 @@ pre{background:#111;color:#0f0;padding:8px;max-height:260px;overflow:auto;white-
 .im{display:inline-block;margin:4px;font-size:11px;vertical-align:top}.im img{width:160px;display:block}
 </style>
 <h1>backend 動作確認</h1>
-<label>Base URL <input id="base" size="30" value="http://localhost:8787"></label>
+<label>接続先 <select id="preset" onchange="base.value=this.value;localStorage.base=this.value">
+<option value="https://g-team-backend.originteamg.workers.dev">リモート(本番Workers)</option>
+<option value="http://localhost:8787">ローカル(wrangler dev)</option></select></label>
+<label>Base URL <input id="base" size="40" value="https://g-team-backend.originteamg.workers.dev"></label>
 <label>device_id <input id="dev" value="device-001"></label>
 <label>user_id <input id="usr" value="user-001"></label>
 
@@ -43,6 +46,7 @@ pre{background:#111;color:#0f0;padding:8px;max-height:260px;overflow:auto;white-
 <pre id="log"></pre>
 <script>
 let cur='';
+if(localStorage.base){base.value=localStorage.base;for(const o of preset.options)if(o.value===base.value)preset.value=o.value}
 const $=id=>document.getElementById(id);
 const log=(t,o)=>{$('log').textContent=`${t}\n${typeof o==='string'?o:JSON.stringify(o,null,1)}\n\n`+$('log').textContent};
 async function fetchJ(m,path,body,raw){
