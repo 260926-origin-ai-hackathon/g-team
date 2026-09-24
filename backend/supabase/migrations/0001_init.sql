@@ -56,3 +56,8 @@ create index on detections (device_id, detected_at desc);
 -- 非公開バケット(署名付きURLで配布)
 insert into storage.buckets (id, name, public) values ('images', 'images', false)
 on conflict (id) do nothing;
+
+-- Data API の「Automatically expose new tables」を OFF にしている場合でも
+-- サーバー(service_role)から使えるようにする
+grant usage on schema public to service_role;
+grant all on all tables in schema public to service_role;

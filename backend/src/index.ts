@@ -21,7 +21,14 @@ app.use('*', cors());
 
 app.use('*', async (c, next) => {
   c.set('db', makeDb(c.env));
-  await next();
+  try {
+    await next();
+  } catch (e) {
+    // supabase-js は Error でないオブジェクトを投げるため、onError に渡るよう変換する
+    if (e instanceof Error) throw e;
+    const m = (e as { message?: string })?.message;
+    throw new Error(m ?? JSON.stringify(e));
+  }
 });
 
 app.onError((e, c) => {
