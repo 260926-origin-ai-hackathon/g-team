@@ -1,0 +1,11 @@
+// コピーして src/config.h を作成する（config.h はコミットしない）
+#pragma once
+
+#define WIFI_SSID "your-ssid"
+#define WIFI_PASS "your-password"
+#define SERVER_URL "https://example.workers.dev"
+#define DEVICE_ID "device-001"
+
+#define PIR_PIN 36                   // Port B
+#define DETECT_SUPPRESS_MS 30000UL   // 検知の抑制時間
+#define INITIAL_POLL_SEC 600         // 初回ポーリング間隔
