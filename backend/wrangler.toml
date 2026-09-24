@@ -1,0 +1,14 @@
+name = "g-team-backend"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[triggers]
+crons = ["*/10 * * * *"]
+
+[vars]
+DEFAULT_DEVICE_ID = "device-001"
+DEFAULT_USER_ID = "user-001"
+VAPID_SUBJECT = "mailto:example@example.com"
+
+# 秘密情報は wrangler secret put で設定する:
+#   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY
