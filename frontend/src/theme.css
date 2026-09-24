@@ -85,3 +85,46 @@ h3, .photo-caption h3, .notification-card h3 { font-size: var(--type-body); font
   .demo-banner select { max-width: 110px; }
   .dialog-heading h2 { line-height: 1.5; }
 }
+
+/* Home-and-heart palette, shared with the app icon. */
+:root { color-scheme: light; --canvas:#faf8f3; --soft:#f1eee5; --ink:#243d31; --muted:#626c61; --border:#e2e4d8; --gold:#b58a51; --button-ink:#fff; }
+:root[data-theme="dark"] { color-scheme:dark; --canvas:#14221c; --surface:#1e3027; --soft:#293d31; --ink:#f5f1e7; --muted:#b8c5b8; --border:#415345; --green:#aed6b7; --gold:#d9b98e; --button-ink:#14221c; }
+.brand-logo { border-radius:12px; flex-shrink:0; }
+.brand-dot, .send-icon, .sidebar-note { color:var(--gold); }
+.primary, .mobile-nav .nav-add span { background:var(--green); color:var(--button-ink); }
+.primary:hover { background:var(--green); filter:brightness(.94); }
+.topbar, .mobile-nav { background:var(--surface); }
+.test-toggle { color:var(--muted); }
+.frame-control { margin-top:16px; padding:18px; border:1px solid var(--border); background:var(--soft); border-radius:16px; }
+.frame-control .fine-print { margin-top:10px; }
+.theme-options { display:flex; flex-wrap:wrap; gap:8px; }
+.theme-options button { min-height:48px; padding:10px 14px; border:1px solid var(--border); border-radius:12px; background:var(--soft); }
+.theme-options button[aria-pressed="true"] { background:var(--green); color:var(--button-ink); border-color:var(--green); }
+.toast { background:var(--ink); color:var(--canvas); }
+.demo-banner select { background:var(--surface); color:var(--ink); }
+.order, .drag-handle, .expand-icon { background:var(--surface); color:var(--ink); }
+:root[data-theme="dark"] .status-card.normal { background:#233d2c; color:#d1ecd6; border-color:#49674c; }
+:root[data-theme="dark"] .status-card.normal .status-orbit { background:#35513b; }
+:root[data-theme="dark"] .status-card.unknown { background:var(--soft); color:var(--ink); }
+:root[data-theme="dark"] .status-card.unknown .status-orbit { background:#415345; }
+:root[data-theme="dark"] .status-card.alert, :root[data-theme="dark"] .error { background:#492c29; color:#ffd5c6; border-color:#885447; }
+:root[data-theme="dark"] .alert .status-orbit { background:#674036; }
+:root[data-theme="dark"] .status-card.warning, :root[data-theme="dark"] .test-banner { background:#423921; color:#f4d59d; border-color:#76633b; }
+:root[data-theme="dark"] .warning .status-orbit { background:#5d4d2d; }
+:root[data-theme="dark"] .test-toggle.active { color:#f4d59d; }
+:root[data-theme="dark"] .like-badge { background:#4a3031; color:#f4b8b2; }
+:root[data-theme="dark"] .demo-banner { color:var(--muted); }
+.status-footer { border-top-color:var(--border); }
+@media(hover:hover) { .desktop-sidebar nav button:hover, .upload-drop:hover { background:var(--soft); } }
+@media(max-width:760px) {
+  .app-shell { min-height:100dvh; }
+  .topbar { height:auto; min-height:72px; padding:calc(8px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left)); }
+  .top-actions { gap:4px; }
+  .topbar .brand { font-size:20px; gap:8px; }
+  .brand-logo { width:34px; height:34px; }
+  main { padding-bottom:calc(116px + env(safe-area-inset-bottom)); }
+  .toast { bottom:calc(100px + env(safe-area-inset-bottom)); }
+  input, select { font-size:16px; }
+}
+@media(max-width:360px) { .topbar { padding-left:12px; padding-right:12px; } .topbar .brand { font-size:18px; } .topbar .test-toggle > span:not(.switch-track) { display:none; } main { padding-left:16px; padding-right:16px; } }
+@media(max-width:760px) { .topbar > .top-actions > .icon-button:first-child { display:inline-flex; } }
