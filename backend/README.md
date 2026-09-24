@@ -21,3 +21,10 @@ npm test
 - DB: `supabase/migrations/0001_init.sql` を Supabase に適用(Storage の非公開バケット `images` も作成される)
 - 本番の秘密情報は `wrangler secret put` で設定
 - Cron は10分ごと(`wrangler.toml`)。表示切替と警告判定を `src/lib/cron.ts` にまとめている
+
+## 動作確認用サイト
+
+```bash
+npm run dev                          # http://localhost:8787
+python3 -m http.server 8000 -d test/frontend   # http://localhost:8000
+```

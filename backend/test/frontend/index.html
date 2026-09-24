@@ -1,0 +1,73 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>backend 動作確認</title>
+<style>
+body{font:14px sans-serif;max-width:900px;margin:1rem auto;padding:0 1rem}
+fieldset{margin:1rem 0}button{margin:2px}input{margin:2px}
+pre{background:#111;color:#0f0;padding:8px;max-height:260px;overflow:auto;white-space:pre-wrap}
+.im{display:inline-block;margin:4px;font-size:11px;vertical-align:top}.im img{width:160px;display:block}
+</style>
+<h1>backend 動作確認</h1>
+<label>Base URL <input id="base" size="30" value="http://localhost:8787"></label>
+<label>device_id <input id="dev" value="device-001"></label>
+<label>user_id <input id="usr" value="user-001"></label>
+
+<fieldset><legend>① 画像投稿</legend>
+<input type="file" id="file" accept="image/*">
+<button onclick="upload()">投稿(中央を4:3で切り抜き)</button></fieldset>
+
+<fieldset><legend>② 一覧 / ③ 並べ替え / 削除</legend>
+<button onclick="list()">一覧取得</button>
+<div id="imgs"></div></fieldset>
+
+<fieldset><legend>④ 設定 / 即時切替</legend>
+<button onclick="api('PATCH','/settings',{test_mode:true})">test_mode ON</button>
+<button onclick="api('PATCH','/settings',{test_mode:false})">test_mode OFF</button>
+<input id="st" value="07:00" size="6"><button onclick="api('PATCH','/settings',{switch_time:st.value})">switch_time変更</button>
+<button onclick="api('POST','/display/advance')">今すぐ切替(advance)</button></fieldset>
+
+<fieldset><legend>⑥⑦⑧ デバイス側の操作</legend>
+<button onclick="api('POST','/detections',{detected_at:new Date().toISOString()})">通過検知</button>
+<button onclick="api('POST','/likes',{image_id:cur||null})">いいね</button>
+<button onclick="poll()">ポーリング</button> current: <code id="cur">-</code>
+<div><img id="disp" style="width:320px;height:240px;background:#ddd"></div></fieldset>
+
+<fieldset><legend>Push購読(ダミー)</legend>
+<button onclick="fetchJ('POST','/users/'+usr.value+'/push-subscriptions',{endpoint:'https://example.com/'+Date.now(),keys:{p256dh:'x',auth:'y'}})">ダミー登録</button></fieldset>
+
+<pre id="log"></pre>
+<script>
+let cur='';
+const $=id=>document.getElementById(id);
+const log=(t,o)=>{$('log').textContent=`${t}\n${typeof o==='string'?o:JSON.stringify(o,null,1)}\n\n`+$('log').textContent};
+async function fetchJ(m,path,body,raw){
+  const r=await fetch($('base').value+path,{method:m,headers:body&&!raw?{'content-type':'application/json'}:{},body:raw||(body?JSON.stringify(body):undefined)});
+  const j=await r.json().catch(()=>null);log(`${m} ${path} → ${r.status}`,j);return j}
+const api=(m,p,b)=>fetchJ(m,`/devices/${$('dev').value}${p}`,b);
+function toBlob(img,sx,sy,sw,sh,w,h){const c=document.createElement('canvas');c.width=w;c.height=h;
+ c.getContext('2d').drawImage(img,sx,sy,sw,sh,w?0:0,0,w,h);return new Promise(r=>c.toBlob(r,'image/jpeg',.85))}
+async function upload(){
+  const f=$('file').files[0];if(!f)return alert('画像を選択');
+  const img=await createImageBitmap(f);
+  let cw=img.width,ch=Math.round(cw*3/4);if(ch>img.height){ch=img.height;cw=Math.round(ch*4/3)}
+  const cx=Math.round((img.width-cw)/2),cy=Math.round((img.height-ch)/2);
+  const k=Math.min(1,1600/Math.max(img.width,img.height));
+  const original=await toBlob(img,0,0,img.width,img.height,Math.round(img.width*k),Math.round(img.height*k));
+  const display=await toBlob(img,cx,cy,cw,ch,320,240);
+  const fd=new FormData();fd.append('original',original,'o.jpg');fd.append('display',display,'d.jpg');
+  fd.append('crop',JSON.stringify({x:cx,y:cy,w:cw,h:ch}));
+  await fetchJ('POST',`/devices/${$('dev').value}/images`,null,fd);list()}
+async function list(){
+  const j=await api('GET','/images?status=all');if(!j)return;
+  $('imgs').innerHTML=j.images.map((i,n)=>`<div class="im"><img src="${i.display_url}">
+   ${i.status} / ${i.sort_order}<br>${i.image_id.slice(0,8)}<br>
+   ${i.status==='queued'?`<button onclick="mv('${i.image_id}',null)">先頭へ</button>
+   ${n>0?`<button onclick="mv('${i.image_id}','${j.images[n-1].image_id}')">前の直後</button>`:''}
+   <button onclick="del('${i.image_id}')">削除</button>`:''}</div>`).join('');
+  cur=j.current_image_id||''}
+async function mv(id,after){await api('PATCH','/images/'+id,{after_image_id:after});list()}
+async function del(id){await api('DELETE','/images/'+id);list()}
+async function poll(){
+  const j=await api('GET','/display?current='+encodeURIComponent(cur));
+  if(j&&j.changed){cur=j.image_id;$('disp').src=j.url}$('cur').textContent=cur||'-'}
+</script>

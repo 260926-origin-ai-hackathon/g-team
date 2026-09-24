@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { runCron } from './lib/cron';
 import { switchDisplay } from './lib/display';
@@ -15,6 +16,8 @@ const SIGN_SEC = 3600;
 
 const makeDb = (env: Bindings) =>
   createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+
+app.use('*', cors());
 
 app.use('*', async (c, next) => {
   c.set('db', makeDb(c.env));
