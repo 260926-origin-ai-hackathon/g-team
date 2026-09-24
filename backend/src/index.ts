@@ -140,6 +140,13 @@ app.get('/devices/:deviceId/images', async (c) => {
   const { data, error } = await q;
   if (error) throw error;
   const rows = (data ?? []) as ImageRow[];
+  const { data: likes } = await db.from('likes').select('image_id, liked_at').eq('device_id', dev.device_id);
+  const likeStat = new Map<string, { n: number; last: string }>();
+  for (const l of likes ?? []) {
+    if (!l.image_id) continue;
+    const cur = likeStat.get(l.image_id);
+    likeStat.set(l.image_id, { n: (cur?.n ?? 0) + 1, last: cur && cur.last > l.liked_at ? cur.last : l.liked_at });
+  }
   const images = await Promise.all(
     rows.map(async (i) => ({
       image_id: i.image_id,
@@ -158,13 +165,6 @@ app.get('/devices/:deviceId/images', async (c) => {
     .select('*', { count: 'exact', head: true })
     .eq('device_id', dev.device_id)
     .eq('status', 'queued');
-  const { data: likes } = await db.from('likes').select('image_id, liked_at').eq('device_id', dev.device_id);
-  const likeStat = new Map<string, { n: number; last: string }>();
-  for (const l of likes ?? []) {
-    if (!l.image_id) continue;
-    const cur = likeStat.get(l.image_id);
-    likeStat.set(l.image_id, { n: (cur?.n ?? 0) + 1, last: cur && cur.last > l.liked_at ? cur.last : l.liked_at });
-  }
   return c.json({
     ...statusOf(dev),
     current_image_id: dev.current_image_id,
