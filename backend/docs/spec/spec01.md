@@ -23,7 +23,8 @@ reset_hours       int         default 12
 switch_time       time        default '00:00'  -- 切替時刻(JST)
 last_switched_on  date        null      -- 最後に切り替えた日(重複防止)
 test_mode         boolean     default false
-warned_at         timestamptz null      -- 警告の重複防止
+warned_at         timestamptz null      -- 警告の重複防止 / 警告中の判定(子アプリはこれを見る)
+warning_reason    text        null      -- no_detection|device_offline|demo
 ```
 
 **last_detected_at と last_seen_at を分ける理由**
@@ -199,10 +200,28 @@ POST /users/{user_id}/push-subscriptions
   { "endpoint": "...", "keys": {...} }
 ```
 
+### 状態取得(子アプリ用)
+```
+GET /devices/{device_id}/status
+
+200 { "last_seen_at":..., "last_detected_at":..., "warned_at":...,
+      "warning_reason":"no_detection|device_offline|demo|null",
+      "is_offline": false, "test_mode": false, ... }
+```
+`GET /images` にも同じ項目と、画像ごとの `like_count` / `last_liked_at` を含める。
+Push は使わない。子アプリはポーリングで `warned_at` を見て警告を表示する。
+
+### 警告のデモ発火
+```
+POST   /devices/{device_id}/warnings  { "reason": "demo" }  -- 警告状態にする
+DELETE /devices/{device_id}/warnings                         -- 手動解除
+```
+次の検知(リセット後の初回)でも自動解除される。
+
 ### ⑥ 通過検知
 ```
 POST /devices/{device_id}/detections
-  { "detected_at": "2026-09-24T10:00:00Z" }
+  { "detected_at": "2026-09-24T10:00:00Z" }   -- 省略・{} 可(サーバー受信時刻を使う)
 
 200 { "ok": true }
 ```

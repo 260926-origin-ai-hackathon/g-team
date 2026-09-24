@@ -5,7 +5,7 @@ import { runCron } from './lib/cron';
 import { switchDisplay } from './lib/display';
 import { sendPush } from './lib/push';
 import { computeSortOrder } from './lib/sort';
-import { pollSec, resetMs } from './lib/time';
+import { OFFLINE_MS, pollSec, resetMs } from './lib/time';
 import type { Bindings, Device, ImageRow } from './lib/types';
 
 type Vars = { db: SupabaseClient };
@@ -58,6 +58,14 @@ async function sign(db: SupabaseClient, path: string): Promise<string> {
   if (error) throw error;
   return data.signedUrl;
 }
+
+const statusOf = (d: Device) => ({
+  last_seen_at: d.last_seen_at,
+  last_detected_at: d.last_detected_at,
+  warned_at: d.warned_at,
+  warning_reason: d.warning_reason,
+  is_offline: !!d.last_seen_at && Date.now() - new Date(d.last_seen_at).getTime() >= OFFLINE_MS,
+});
 
 const cropOf = (i: ImageRow) => ({ x: i.crop_x, y: i.crop_y, w: i.crop_w, h: i.crop_h });
 
@@ -141,6 +149,8 @@ app.get('/devices/:deviceId/images', async (c) => {
       status: i.status,
       displayed_at: i.displayed_at,
       sort_order: i.sort_order,
+      like_count: likeStat.get(i.image_id)?.n ?? 0,
+      last_liked_at: likeStat.get(i.image_id)?.last ?? null,
     })),
   );
   const { count } = await db
@@ -148,7 +158,15 @@ app.get('/devices/:deviceId/images', async (c) => {
     .select('*', { count: 'exact', head: true })
     .eq('device_id', dev.device_id)
     .eq('status', 'queued');
+  const { data: likes } = await db.from('likes').select('image_id, liked_at').eq('device_id', dev.device_id);
+  const likeStat = new Map<string, { n: number; last: string }>();
+  for (const l of likes ?? []) {
+    if (!l.image_id) continue;
+    const cur = likeStat.get(l.image_id);
+    likeStat.set(l.image_id, { n: (cur?.n ?? 0) + 1, last: cur && cur.last > l.liked_at ? cur.last : l.liked_at });
+  }
   return c.json({
+    ...statusOf(dev),
     current_image_id: dev.current_image_id,
     display_seq: dev.display_seq,
     queued_count: count ?? 0,
@@ -232,6 +250,30 @@ app.patch('/devices/:deviceId/settings', async (c) => {
   return c.json(settingsOf(data as Device));
 });
 
+// 子アプリのポーリング用: 死活・検知・警告の状態
+app.get('/devices/:deviceId/status', async (c) => {
+  const dev = await getDevice(c, c.req.param('deviceId'));
+  return c.json({ ...statusOf(dev), ...settingsOf(dev), current_image_id: dev.current_image_id });
+});
+
+// 警告のデモ用発火(テストモードのボタン用)。次の検知(リセット後の初回)で自動解除される
+app.post('/devices/:deviceId/warnings', async (c) => {
+  const dev = await getDevice(c, c.req.param('deviceId'));
+  const body = await c.req.json().catch(() => ({}));
+  const reason = body?.reason ?? 'demo';
+  if (!['demo', 'no_detection', 'device_offline'].includes(reason)) return c.json({ error: 'invalid reason' }, 400);
+  const now = new Date().toISOString();
+  await c.var.db.from('devices').update({ warned_at: now, warning_reason: reason }).eq('device_id', dev.device_id);
+  return c.json({ ok: true, warned_at: now, warning_reason: reason });
+});
+
+// 警告の手動解除
+app.delete('/devices/:deviceId/warnings', async (c) => {
+  const dev = await getDevice(c, c.req.param('deviceId'));
+  await c.var.db.from('devices').update({ warned_at: null, warning_reason: null }).eq('device_id', dev.device_id);
+  return c.json({ ok: true });
+});
+
 // テスト用の即時切替(日次切替と同一関数)
 app.post('/devices/:deviceId/display/advance', async (c) => {
   const dev = await getDevice(c, c.req.param('deviceId'));
@@ -262,7 +304,10 @@ app.post('/devices/:deviceId/detections', async (c) => {
   const first = !dev.last_detected_at || new Date(dev.last_detected_at).getTime() + resetMs(dev) <= at.getTime();
   await db.from('detections').insert({ device_id: dev.device_id, detected_at: at.toISOString(), notified: first });
   const patch: Record<string, unknown> = { last_detected_at: at.toISOString() };
-  if (first) patch.warned_at = null;
+  if (first) {
+    patch.warned_at = null;
+    patch.warning_reason = null;
+  }
   await db.from('devices').update(patch).eq('device_id', dev.device_id);
   if (first) await sendPush(db, c.env, dev.user_id, { type: 'detection' });
   return c.json({ ok: true });

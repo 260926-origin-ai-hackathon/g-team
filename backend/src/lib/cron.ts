@@ -25,7 +25,7 @@ export async function runCron(db: SupabaseClient, env: Bindings, now = new Date(
     }
     if (reason) {
       await sendPush(db, env, cur.user_id, { type: 'warning', reason });
-      await db.from('devices').update({ warned_at: now.toISOString() }).eq('device_id', cur.device_id);
+      await db.from('devices').update({ warned_at: now.toISOString(), warning_reason: reason }).eq('device_id', cur.device_id);
     }
   }
 }

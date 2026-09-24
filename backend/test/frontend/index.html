@@ -32,6 +32,11 @@ pre{background:#111;color:#0f0;padding:8px;max-height:260px;overflow:auto;white-
 <button onclick="poll()">ポーリング</button> current: <code id="cur">-</code>
 <div><img id="disp" style="width:320px;height:240px;background:#ddd"></div></fieldset>
 
+<fieldset><legend>状態 / 警告デモ</legend>
+<button onclick="api('GET','/status')">状態取得</button>
+<button onclick="api('POST','/warnings',{reason:'demo'})">警告を出す</button>
+<button onclick="api('DELETE','/warnings')">警告を解除</button></fieldset>
+
 <fieldset><legend>Push購読(ダミー)</legend>
 <button onclick="fetchJ('POST','/users/'+usr.value+'/push-subscriptions',{endpoint:'https://example.com/'+Date.now(),keys:{p256dh:'x',auth:'y'}})">ダミー登録</button></fieldset>
 
@@ -62,7 +67,7 @@ async function upload(){
 async function list(){
   const j=await api('GET','/images?status=all');if(!j||!j.images)return;
   $('imgs').innerHTML=j.images.map((i,n)=>`<div class="im"><img src="${i.display_url}">
-   ${i.status} / ${i.sort_order}<br>${i.image_id.slice(0,8)}<br>
+   ${i.status} / ${i.sort_order} / ♥${i.like_count}<br>${i.image_id.slice(0,8)}<br>
    ${i.status==='queued'?`<button onclick="mv('${i.image_id}',null)">先頭へ</button>
    ${n>0?`<button onclick="mv('${i.image_id}','${j.images[n-1].image_id}')">前の直後</button>`:''}
    <button onclick="del('${i.image_id}')">削除</button>`:''}</div>`).join('');

@@ -20,6 +20,7 @@ export type Device = {
   last_switched_on: string | null;
   test_mode: boolean;
   warned_at: string | null;
+  warning_reason: 'no_detection' | 'device_offline' | 'demo' | null;
 };
 
 export type ImageRow = {
