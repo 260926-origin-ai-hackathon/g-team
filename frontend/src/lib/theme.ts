@@ -14,7 +14,7 @@ export function useTheme() {
   }, []);
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#14221c' : '#faf8f3');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#14221c' : '#fefefd');
   }, [dark]);
   function setTheme(value: Theme) {
     updateTheme(value);
