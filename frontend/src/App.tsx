@@ -1,122 +1,96 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
-
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { registerSW } from 'virtual:pwa-register';
+import { Heart, House, Settings as SettingsIcon, Plus, Clock3, Radio, WifiOff, Bell, Check, RefreshCw, Image as ImageIcon, Images, Sun, Smartphone, FlaskConical, AlertTriangle, ChevronRight, ChevronUp, Footprints } from 'lucide-react';
+import { api, configured, isDemo } from './lib/api';
+import { getActivity, relativeTime, reorderPhotos } from './lib/status';
+import { setDemoScenario } from './lib/demo';
+import type { ImageList, Photo } from './lib/types';
+import { Queue } from './components/Queue';
+import { UploadDialog } from './components/UploadDialog';
+import { Dialog } from './components/Dialog';
+import { WalkingIcon } from './components/WalkingIcon';
+import { PhotoImage } from './components/PhotoImage';
+import { useTheme } from './lib/theme';
+const date = (v: string | null) => v ? new Date(v).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', timeZone: 'Asia/Tokyo' }) : '表示日時未取得';
+export default function App() {
+  const { theme, setTheme } = useTheme();
+  const [demoScenario, setDemoScenarioValue] = useState('normal');
+  const [editing, setEditing] = useState(false);
+  const [settingDialog, setSettingDialog] = useState<'time' | 'install' | 'notifications' | null>(null);
+  const client = useQueryClient(); const [page, setPage] = useState<'home' | 'monitoring' | 'gallery' | 'settings'>('home'); const [upload, setUpload] = useState(false); const [warningAction, setWarningAction] = useState<'start' | 'clear' | null>(null); const [deleting, setDeleting] = useState<Photo | null>(null); const [view, setView] = useState<Photo | null>(null); const [message, setMessage] = useState(''); const [error, setError] = useState(''); const [online, setOnline] = useState(navigator.onLine); const [now, setNow] = useState(Date.now()); const [updateWorker, setUpdateWorker] = useState<null | (() => void)>(null);
+  const status = useQuery({ queryKey: ['status'], queryFn: api.status, enabled: configured, refetchInterval: query => query.state.data?.test_mode ? 5000 : 30000 });
+  const images = useQuery({ queryKey: ['images'], queryFn: api.images, enabled: configured, refetchInterval: status.data?.test_mode ? 5000 : 30000 });
+  const settings = useQuery({ queryKey: ['settings'], queryFn: api.settings, enabled: configured });
+  const invalidate = () => { void client.invalidateQueries({ queryKey: ['images'] }); void client.invalidateQueries({ queryKey: ['status'] }); void client.invalidateQueries({ queryKey: ['settings'] }) };
+  useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 15000); const network = () => { setOnline(navigator.onLine); if (navigator.onLine) invalidate() }; const update = (e: MessageEvent) => { if (e.data?.type === 'SERVER_UPDATE') invalidate() }; window.addEventListener('online', network); window.addEventListener('offline', network); navigator.serviceWorker?.addEventListener('message', update); return () => { clearInterval(timer); window.removeEventListener('online', network); window.removeEventListener('offline', network); navigator.serviceWorker?.removeEventListener('message', update) } }, [client]);
+  useEffect(() => { if (!('serviceWorker' in navigator) || !import.meta.env.PROD) return; const update = registerSW({ onNeedRefresh() { setUpdateWorker(() => () => { void update(true) }) }, onRegisterError() { setError('アプリの更新を準備できませんでした。再読み込みしてください。') } }) }, []);
+  useEffect(() => { if (!message) return; const timer = setTimeout(() => setMessage(''), 6000); return () => clearTimeout(timer) }, [message]);
+  const report = (e: Error) => setError(e.message);
+  const changeSettings = useMutation({ mutationFn: api.updateSettings, onSuccess: (data) => { client.setQueryData(['settings'], data); void client.invalidateQueries({ queryKey: ['status'] }); setMessage('設定を保存しました') }, onError: report });
+  const advance = useMutation({ mutationFn: api.advance, onSuccess: () => { invalidate(); setMessage(isDemo ? 'デモの表示写真を切り替えました' : '写真の切替を実行しました') }, onError: report });
+  const warning = useMutation({ mutationFn: (action: 'start' | 'clear') => action === 'start' ? api.setWarning() : api.clearWarning(), onSuccess: () => { setWarningAction(null); invalidate(); setMessage('警告の状態を更新しました') }, onError: report });
+  const remove = useMutation({ mutationFn: api.remove, onSuccess: () => { setDeleting(null); invalidate(); setMessage('写真を削除しました') }, onError: report });
+  const reorder = useMutation({ mutationFn: ({ id, after }: { id: string; after: string | null }) => api.reorder(id, after), onMutate: async ({ id, after }) => { await client.cancelQueries({ queryKey: ['images'] }); const previous = client.getQueryData<ImageList>(['images']); if (previous) { const queue = reorderPhotos(previous.images.filter(p => p.status === 'queued').sort((a, b) => a.sort_order - b.sort_order), id, after).map((p, i) => ({ ...p, sort_order: i })); client.setQueryData(['images'], { ...previous, images: [...previous.images.filter(p => p.status !== 'queued'), ...queue] }) } return { previous } }, onError: (e, _, context) => { if (context?.previous) client.setQueryData(['images'], context.previous); report(e) }, onSettled: () => client.invalidateQueries({ queryKey: ['images'] }) });
+  const list = images.data; const current = list?.images.find(p => p.image_id === list.current_image_id); const queued = (list?.images ?? []).filter(p => p.status === 'queued').sort((a, b) => a.sort_order - b.sort_order); const history = (list?.images ?? []).filter(p => p.status === 'displayed').sort((a, b) => Date.parse(b.displayed_at ?? '') - Date.parse(a.displayed_at ?? ''));
+  const activity = getActivity(status.data ?? null, list?.last_detected_at ?? null, now); const stale = !online || images.isError || status.isError; const testMode = status.data?.test_mode ?? settings.data?.test_mode; const loading = images.isPending && configured; const disabled = !online || !configured;
+  async function openPhoto(id: string) { try { const fresh = await client.fetchQuery({ queryKey: ['images'], queryFn: api.images, staleTime: 0 }); const photo = fresh.images.find(p => p.image_id === id); if (!photo) throw Error('写真が見つかりません。画面を更新してください。'); setView(photo) } catch (e) { report(e as Error) } }
+  function navigate(next: typeof page) { setPage(next); setEditing(false); window.scrollTo({ top: 0 }); }
+  const lastMotion = status.data?.last_detected_at ?? list?.last_detected_at ?? null;
+  const lastSeen = status.data?.last_seen_at ?? null;
+  const fetching = images.isFetching || status.isFetching;
+  const motionTime = loading ? '確認中…' : relativeTime(lastMotion, now);
+  const elapsedParts = motionTime.match(/^(\d+)(分前|時間前|日前)$/);
+  const shortTime = (v: string | null) => {
+    if (!v || !Number.isFinite(Date.parse(v))) return '未取得';
+    const d = new Date(v);
+    const day = d.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' });
+    return `${day === new Date(now).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' }) ? '今日' : date(v)} ${d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' })}`;
+  };
+  // Both observation queries must have succeeded before calling this a refresh.
+  const updatedAt = status.dataUpdatedAt && images.dataUpdatedAt ? Math.min(status.dataUpdatedAt, images.dataUpdatedAt) : 0;
+  const months = history.reduce<Record<string, Photo[]>>((groups, photo) => {
+    const key = photo.displayed_at ? new Date(photo.displayed_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', timeZone: 'Asia/Tokyo' }) : '表示日時未取得';
+    (groups[key] ??= []).push(photo); return groups;
+  }, {});
+  const motionIcon = <span className="motion-symbol"><WalkingIcon /><Footprints className="motion-marks" aria-hidden="true" /></span>;
+  const stateNotice = stale || activity.tone !== 'normal' ? <div className="state-notice" role="status"><AlertTriangle size={20} /><div><strong>{stale ? '最新情報を取得できません' : activity.title}</strong><p>{stale ? '表示中の時刻は過去の記録です。接続を確認して更新してください。' : activity.detail}</p></div></div> : null;
+  const monitoringCard = (detail: boolean) => <section className={`monitor-card ${detail ? 'detail-card' : 'overview-card'} ${stale ? 'unknown' : activity.tone}`} aria-label="見守りの状態" aria-busy={loading}>
+    <div className="motion-row"><span className="sensor-icon">{motionIcon}</span><div className="sensor-reading"><p>最後の動き</p><strong className={motionTime.length > 7 ? 'long-value' : motionTime.length > 3 ? 'compact-value' : ''}>{!detail && elapsedParts ? <><span className="elapsed-number">{elapsedParts[1]}</span><span>{elapsedParts[2]}</span></> : motionTime}</strong>{detail && <time dateTime={lastMotion ?? undefined}>{shortTime(lastMotion)}</time>}</div></div>
+    <div className="communication-row"><span className="sensor-icon"><Radio aria-hidden="true" /></span><div className="sensor-reading"><p>最終通信</p><strong>{loading ? '確認中…' : lastSeen ? relativeTime(lastSeen, now) : '未取得'}</strong>{detail && <time dateTime={lastSeen ?? undefined}>{shortTime(lastSeen)}</time>}</div>{!detail && <button className="detail-link" onClick={() => navigate('monitoring')} aria-label="見守りの詳細">詳細<ChevronRight /></button>}</div>
+    {stateNotice}
+  </section>;
+  return <div className="app-shell">
+    <header className="topbar"><button className="brand" aria-label="見守り ホーム" onClick={() => navigate('home')}><span className="brand-symbol"><House /><Heart fill="currentColor" /></span><span>見守り</span></button><button className={`icon-button settings-link ${page === 'settings' ? 'selected' : ''}`} aria-label="設定を開く" aria-current={page === 'settings' ? 'page' : undefined} onClick={() => navigate('settings')}><SettingsIcon /></button></header>
+    {testMode && <div className="test-banner"><FlaskConical size={18} /><span>テストモード中 · 確認が終わったら設定でオフにしてください</span></div>}
+    {!configured && <div className="error connection-notice" role="status">接続準備中です。APIのURLと端末IDが設定されると、ご家族の情報を取得します。</div>}
+    {stale && <div className="error connection-notice" role="alert"><WifiOff size={18} /><span>最新情報を取得できません。{images.error?.message ?? status.error?.message}</span><button className="text-button" onClick={invalidate} disabled={!online || fetching}>再試行</button></div>}
+    {error && <div className="error connection-notice" role="alert">{error}<button className="text-button" onClick={() => setError('')}>閉じる</button></div>}
+    {updateWorker && <div className="connection-notice"><p>新しいバージョンがあります。</p><button onClick={updateWorker} className="text-button" disabled={upload}>更新する</button></div>}
+    <main key={page} className={`page-${page}`}>
+      {page === 'home' && <><h1 className="visually-hidden">見守り ホーム</h1>{monitoringCard(false)}
+        <section className="current-section"><h2>フォトフレーム</h2>{loading ? <div className="photo-skeleton skeleton" /> : current ? <article className="current-card"><button className="hero-photo" onClick={() => void openPhoto(current.image_id)} aria-label="表示中の写真を大きく見る"><PhotoImage src={current.display_url} alt="フォトフレームの写真" /></button><div className="photo-caption"><span className="like-count" aria-label={`いいね ${current.like_count ?? (current.last_liked_at ? 1 : 0)}件`}><Heart /><span>{current.like_count ?? (current.last_liked_at ? 1 : current.last_liked_at === null ? 0 : '—')}</span></span><button className="detail-link" onClick={() => void openPhoto(current.image_id)} aria-label="写真の詳細">詳細<ChevronRight /></button></div></article> : <div className="empty-state"><ImageIcon size={38} /><h3>最初の一枚を届けませんか</h3><p>何気ない日常も、家族にはうれしい便りです。</p><button className="primary" disabled={disabled} onClick={() => setUpload(true)}><Plus size={18} />写真を送る</button></div>}
+          {testMode && <div className="frame-control"><button className="primary full" disabled={disabled || stale || advance.isPending || fetching || !queued.length} onClick={() => advance.mutate()}><RefreshCw size={18} className={advance.isPending ? 'spin' : ''} />{advance.isPending ? '切り替えています…' : '次の写真に切り替える'}</button><p className="fine-print">{queued.length ? '実機への反映は次の通信時です。' : '切り替える写真を追加してください。'}</p></div>}
+        </section></>}
+      {page === 'monitoring' && <><h1>見守り</h1>{monitoringCard(true)}<div className="refresh-row"><span>情報更新 <time>{updatedAt ? new Date(updatedAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' }) : '未取得'}</time></span><button className="text-button" disabled={disabled || fetching} onClick={() => { setNow(Date.now()); invalidate(); }}><RefreshCw className={fetching ? 'spin' : ''} />{fetching ? '更新中' : '更新'}</button></div><details className="reading-guide" open><summary>表示の見方<ChevronUp /></summary><dl><div><dt>最後の動き</dt><dd>機器が動きを検知した時刻です。</dd></div><div><dt>最終通信</dt><dd>機器がサーバーと通信した時刻です。</dd></div><div><dt>情報更新</dt><dd>このアプリが情報を取得した時刻です。</dd></div></dl><p>動きの記録は、本人の安否を保証するものではありません。</p></details></>}
+      {page === 'gallery' && <><h1>ギャラリー</h1><section className="upcoming-section"><div className="section-heading"><h2>これからの写真 <span className="count">{queued.length}枚</span></h2><button className="detail-link" disabled={!queued.length} aria-expanded={editing} onClick={() => setEditing(!editing)}>{editing ? '完了' : '編集'}{editing ? <Check /> : <ChevronRight />}</button></div>{loading ? <div className="photo-skeleton skeleton" /> : queued.length ? editing ? <><p className="section-help">持ち手をドラッグ、または矢印で順番を変更できます。</p><Queue photos={queued} disabled={disabled || reorder.isPending || remove.isPending} onReorder={(id, after) => reorder.mutate({ id, after })} onDelete={setDeleting} /></> : <div className="upcoming-grid">{queued.map((photo, i) => <button className="upcoming-photo" key={photo.image_id} onClick={() => void openPhoto(photo.image_id)} aria-label={`${i + 1}番目の写真を見る`}><span className="queue-thumbnail"><PhotoImage src={photo.display_url} alt={`${i + 1}番目に表示する写真`} lazy /><span className="order">{i + 1}</span></span>{i === 0 && <span className="next-photo">次の写真</span>}</button>)}</div> : <div className="queue-empty"><p>これからの写真はまだありません。</p><button className="text-button" onClick={() => setUpload(true)} disabled={disabled}><Plus size={18} />写真を送る</button></div>}</section><section className="history-section"><h2>過去の写真 <span className="count">{history.length}枚</span></h2><p className="history-help">これまで表示対象に設定された写真</p>{Object.entries(months).map(([month, photos]) => <section className="history-month" key={month}><h3>{month}</h3><div className="history-grid">{photos.map(photo => <button className="history-photo" key={photo.image_id} onClick={() => void openPhoto(photo.image_id)}><PhotoImage className="history-thumb" src={photo.original_url} alt={`${date(photo.displayed_at)}に表示した写真`} lazy /><span>{photo.displayed_at ? new Date(photo.displayed_at).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', timeZone: 'Asia/Tokyo' }) : '日時未取得'}</span></button>)}</div></section>)}{!history.length && !loading && <p className="empty-history">表示された写真が、ここに残ります。</p>}</section></>}
+      {page === 'settings' && <><h1>設定</h1><section className="settings-section"><h2>表示</h2><div className="settings-panel theme-row"><Sun className="theme-icon" /><span className="setting-label">テーマ</span><div className="theme-options" role="group" aria-label="画面のテーマ">{([{ value: 'system', label: '端末に合わせる' }, { value: 'light', label: 'ライト' }, { value: 'dark', label: 'ダーク' }] as const).map(option => <button key={option.value} aria-pressed={theme === option.value} onClick={() => setTheme(option.value)}>{option.label}</button>)}</div></div></section>
+        <section className="settings-section"><h2>フォトフレーム</h2><div className="settings-panel"><button className="setting-row" onClick={() => setSettingDialog('time')}><span className="round-icon"><Clock3 /></span><span className="setting-copy"><strong>写真の切替時刻</strong><small>日本時間</small></span><span className="setting-value">{settings.data?.switch_time?.slice(0, 5) ?? '未取得'}</span><ChevronRight /></button></div></section>
+        <section className="settings-section"><h2>アプリ</h2><div className="settings-panel"><button className="setting-row" onClick={() => setSettingDialog('install')}><span className="round-icon"><Smartphone /></span><span className="setting-copy"><strong>ホーム画面に追加</strong></span><ChevronRight /></button><button className="setting-row" onClick={() => setSettingDialog('notifications')}><span className="round-icon"><Bell /></span><span className="setting-copy"><strong>通知について</strong><small>アプリを開いている間に更新</small></span><ChevronRight /></button></div></section>
+        <section className="settings-section"><h2>動作確認</h2><div className="settings-panel"><div className="setting-row"><span className="round-icon"><FlaskConical /></span><span className="setting-copy"><strong>テストモード</strong><small>確認が終わったらオフにしてください</small></span><button className="switch" role="switch" aria-label="テストモード" aria-checked={!!testMode} disabled={changeSettings.isPending || disabled || testMode === undefined} onClick={() => changeSettings.mutate({ test_mode: !testMode })}><span /></button></div></div>{testMode && <div className="test-controls"><p>検知のリセット間隔と機器の更新間隔を短くしています。</p><button className="secondary" disabled={disabled || advance.isPending || !queued.length} onClick={() => advance.mutate()}>切替を今すぐ実行</button><div className="button-row"><button className="secondary" disabled={disabled || warning.isPending || !!status.data?.warned_at} onClick={() => setWarningAction('start')}>デモ警告を表示</button><button className="secondary" disabled={disabled || warning.isPending || status.data?.warning_reason !== 'demo' || !status.data?.warned_at} onClick={() => setWarningAction('clear')}>デモ警告を解除</button></div></div>}</section>
+      </>}
+      {isDemo && <aside className="demo-banner"><span><FlaskConical size={14} />画面デモ · 実機・サーバー未接続</span><label className="visually-hidden" htmlFor="demo-scenario">デモの状態</label><select id="demo-scenario" value={demoScenario} onChange={e => { setDemoScenarioValue(e.target.value); setDemoScenario(e.target.value); setNow(Date.now()); invalidate(); }}><option value="normal">反応あり</option><option value="warning">反応なし</option><option value="offline">通信断</option><option value="empty">写真なし</option></select></aside>}
+    </main>
+    <nav className="mobile-nav" aria-label="下部メニュー"><button className={page !== 'gallery' ? 'selected' : ''} aria-current={page === 'home' || page === 'monitoring' ? 'page' : undefined} onClick={() => navigate('home')}><WalkingIcon />見守り</button><button className="nav-add" disabled={disabled} onClick={() => setUpload(true)}><span><Plus /></span>写真を送る</button><button className={page === 'gallery' ? 'selected' : ''} aria-current={page === 'gallery' ? 'page' : undefined} onClick={() => navigate('gallery')}><Images />ギャラリー</button></nav>
+    {message && <div className="toast" role="status"><Check size={18} />{message}</div>}
+    {upload && <UploadDialog onClose={() => setUpload(false)} onDone={() => { setUpload(false); invalidate(); setMessage(isDemo ? 'デモに写真を保存しました' : '写真を保存しました'); }} />}
+    {settingDialog && <Dialog title={{ time: '写真の切替時刻', install: 'ホーム画面に追加', notifications: '通知について' }[settingDialog]} onClose={() => setSettingDialog(null)} busy={changeSettings.isPending}>
+      {settingDialog === 'time' && <><p className="muted">毎日この時刻を目安に、次の一枚へ切り替わります。</p><form onSubmit={e => { e.preventDefault(); changeSettings.mutate({ switch_time: String(new FormData(e.currentTarget).get('switch_time')) }, { onSuccess: () => setSettingDialog(null) }); }}><label htmlFor="switch-time">日本時間</label><div className="time-row"><input id="switch-time" name="switch_time" type="time" required defaultValue={settings.data?.switch_time.slice(0, 5) ?? '09:00'} /><button className="primary" disabled={disabled || changeSettings.isPending}>{changeSettings.isPending ? '保存中…' : '保存する'}</button></div></form><p className="fine-print">次の写真がない日は、前の写真をそのまま表示します。</p>{changeSettings.isError && <p className="error" role="alert">{changeSettings.error.message}</p>}</>}
+      {settingDialog === 'install' && <div className="help-content"><h3>iPhone・iPad</h3><p>Safariの共有メニューから「ホーム画面に追加」を選んでください。</p><h3>Android</h3><p>ブラウザのメニューから「アプリをインストール」または「ホーム画面に追加」を選んでください。</p></div>}
+      {settingDialog === 'notifications' && <div className="help-content"><p>アプリを開いている間、警告やいいねを自動で更新します。</p><p>アプリを閉じている間の通知はありません。ホーム画面に追加した場合も同じです。</p></div>}
+    </Dialog>}
+    {warningAction && <Dialog title={warningAction === 'start' ? 'デモ警告を表示しますか？' : 'デモ警告を解除しますか？'} onClose={() => setWarningAction(null)} busy={warning.isPending}><p>{isDemo ? '画面デモの警告状態を変更します。実際の異常を示すものではありません。' : 'この変更は共有サーバーに保存され、同じ端末を見ている家族の画面にも反映されます。'}</p><div className="button-row"><button className="secondary" disabled={warning.isPending} onClick={() => setWarningAction(null)}>キャンセル</button><button className="primary" disabled={warning.isPending} onClick={() => warning.mutate(warningAction)}>{warning.isPending ? '更新中…' : '実行する'}</button></div>{warning.isError && <p className="error" role="alert">{warning.error.message}</p>}</Dialog>}
+    {deleting && <Dialog title="この写真を削除しますか？" onClose={() => setDeleting(null)} busy={remove.isPending}><PhotoImage className="delete-preview" src={deleting.display_url} alt="削除する写真" /><p>これからの写真から取り除きます。この操作は取り消せません。</p><div className="button-row"><button className="secondary" disabled={remove.isPending} onClick={() => setDeleting(null)}>キャンセル</button><button className="danger" disabled={remove.isPending} onClick={() => remove.mutate(deleting.image_id)}>削除する</button></div>{remove.isError && <p role="alert" className="error">{remove.error.message}</p>}</Dialog>}
+    {view && <Dialog title="写真を見る" onClose={() => setView(null)}><PhotoImage className="full-photo" src={view.original_url} alt="送信した写真の全体" /><p className="muted">{view.status === 'queued' ? 'これから表示する写真' : `${date(view.displayed_at)}からの写真`}{view.last_liked_at ? ` · いいね ${view.like_count ?? 1}件` : ''}</p></Dialog>}
+  </div>;
 }
-
-export default App

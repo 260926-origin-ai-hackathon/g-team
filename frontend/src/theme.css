@@ -1,0 +1,37 @@
+/* Approved September 25 palette. Shared by every screen and dialog. */
+:root {
+  color-scheme: light;
+  --canvas: #fefefd;
+  --surface: #ffffff;
+  --ink: #19222b;
+  --muted: #51606d;
+  --green: #005840;
+  --soft: #edf5ef;
+  --circle: #ddebe0;
+  --border: #dce2de;
+  --gold: #d6a11d;
+  --button-ink: #ffffff;
+  --warning-bg: #fff3dc;
+  --warning-ink: #79530e;
+  --alert-bg: #fff0eb;
+  --alert-ink: #933c29;
+  color: var(--ink);
+  background: var(--canvas);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #14221c;
+  --surface: #192a22;
+  --ink: #f4f5f0;
+  --muted: #bbc9c1;
+  --green: #a5dbbe;
+  --soft: #203a2d;
+  --circle: #2e4c3c;
+  --border: #405649;
+  --gold: #ebbd57;
+  --button-ink: #10271b;
+  --warning-bg: #423921;
+  --warning-ink: #f4d59d;
+  --alert-bg: #492c29;
+  --alert-ink: #ffd5c6;
+}
