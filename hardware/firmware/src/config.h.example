@@ -1,0 +1,14 @@
+// コピーして src/config.h を作成する（config.h はコミットしない）
+#pragma once
+
+#define WIFI_SSID "your-ssid"
+#define WIFI_PASS "your-password"
+#define SERVER_URL "https://example.workers.dev"
+#define DEVICE_ID "device-001"
+
+#define TOF_SDA_PIN 32               // Port A
+#define TOF_SCL_PIN 33
+#define DETECT_DISTANCE_MM 300       // この距離以内に物体が入ったら検知
+#define DETECT_CENTER_ONLY 1         // 1: 正面(中央2x2ゾーン)のみ / 0: 全16ゾーン
+#define DETECT_SUPPRESS_MS 30000UL   // 検知の抑制時間
+#define INITIAL_POLL_SEC 600         // 初回ポーリング間隔
